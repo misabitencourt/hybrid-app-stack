@@ -1,0 +1,29 @@
+{
+  "name": "hybrid-app-stack",
+  "version": "1.0.0",
+  "description": "My hybrid app stack",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "rollup -c -w",
+    "build": "rollup -c",
+    "serve": "cd cordova-dist/www && php -S 0.0.0.0:8000",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/misabitencourt/hybrid-app-stack.git"
+  },
+  "author": "Misael Braga de Bitencourt",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/misabitencourt/hybrid-app-stack/issues"
+  },
+  "homepage": "https://github.com/misabitencourt/hybrid-app-stack#readme",
+  "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
+    "cordova": "^8.0.0",
+    "rollup-plugin-babel": "^3.0.7",
+    "rollup-plugin-uglify": "^4.0.0"
+  }
+}
