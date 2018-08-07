@@ -1,5 +1,6 @@
 import babel from 'rollup-plugin-babel';
 import { uglify } from 'rollup-plugin-uglify';
+import async from 'rollup-plugin-async';
 
 export default {
     input: 'src/index.js',
@@ -9,9 +10,11 @@ export default {
         name: 'app'        
     },
     plugins: [
-        // babel({
-        //     exclude: 'node_modules/**',
-        // }),
-        // uglify()
+        async(),
+        babel({
+            exclude: 'node_modules/**'
+        }),
+        uglify()
     ]
 }
+

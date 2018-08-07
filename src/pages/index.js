@@ -1,7 +1,9 @@
 import home from './home'
+import addTodo from './add-todo'
 
 const pages = [
-    {id: 'home', mount: home}
+    {id: 'home', mount: home},
+    {id: 'add-todo', mount: addTodo}
 ]
 
 export default (storage, actions) => {
