@@ -3,5 +3,6 @@
 export default {
     prevPage: [],
     page: 'home',
-    lists: {}
+    lists: {},
+    model: {}
 }
