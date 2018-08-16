@@ -7,9 +7,11 @@ export default (state, actions, children) => h('div', {id: 'app', className: 'fr
 
     ]),
 
-    h('div', {className: 'page page-current'}, [
-        navbar({title: 'App', state, actions}),
-        h('div', {className: 'page-content'}, children)
+    h('div', {className: 'view view-main view-init'}, [
+        h('div', {className: 'page page-current'}, [
+            navbar({title: 'App', state, actions}),
+            h('div', {className: 'page-content'}, children)
+        ])
     ])
 ])
 

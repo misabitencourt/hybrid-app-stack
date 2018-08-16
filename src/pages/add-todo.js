@@ -11,6 +11,7 @@ export default (state, actions) => h('div', {className: 'page-home'}, [
         input(state, actions, {type: 'text', name: 'description', placeholder: 'Todo'})
     ]),
 
-
-    
+    h('div', {className: 'block'}, [
+        button(state, actions, {text: 'Save', onclick: () => actions.save('todo')})
+    ])
 ])
