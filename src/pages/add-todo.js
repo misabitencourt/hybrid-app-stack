@@ -12,6 +12,10 @@ export default (state, actions) => h('div', {className: 'page-home'}, [
     ]),
 
     h('div', {className: 'block'}, [
-        button(state, actions, {text: 'Save', onclick: () => actions.save('todo')})
+        h('div', {className: 'row'}, [            
+            button(state, actions, {text: 'Cancel', color: 'gray', 
+                                        onclick: () => actions.goTo({page: 'home'})}),
+            button(state, actions, {text: 'Save', onclick: () => actions.save('todo')})
+        ])
     ])
 ])

@@ -4,7 +4,14 @@ var app = (function () {
     var h = window.hyperapp.h;
 
 
-    var icons = [{ id: 'back-page', getElement: function getElement() {
+    var icons = [{ id: 'delete', getElement: function getElement() {
+            if (window.PLATFORM === 'android') {
+                return h('i', { className: 'material-icons' }, 'delete');
+            }
+
+            return h('i', { className: 'f7-icons' }, 'delete_round');
+        }
+    }, { id: 'back-page', getElement: function getElement() {
             if (window.PLATFORM === 'android') {
                 return h('i', { className: 'hidden' }, '');
             }
@@ -114,18 +121,71 @@ var app = (function () {
         });
     }
 
-    var service = {
+    function list(listName, map) {
+        return new Promise(function (resolve) {
+            if (!listName) {
+                return resolve([]);
+            }
+
+            openDb(listName).then(function (store, trans) {
+                var cursorRequest = store.openCursor();
+                var items = [];
+
+                cursorRequest.onerror = function (error) {
+                    console.log(error);
+                };
+
+                cursorRequest.onsuccess = function (evt) {
+                    var cursor = evt.target.result;
+                    if (cursor) {
+                        var item = cursor.value;
+                        item.id = cursor.key;
+                        items.push(item);
+                        cursor.continue();
+                    }
+                };
+
+                store.transaction.oncomplete = function () {
+                    return resolve(map ? items.map(map) : items);
+                };
+            });
+        });
+    }
+
+    var todoSrv = {
+
+        sort: function sort(a, b) {
+            if (a.description > b.description) {
+                return 1;
+            }
+            if (a.description < b.description) {
+                return -1;
+            }
+            return 0;
+        },
+
+        list: function list$$1(filters) {
+            var _this = this;
+
+            return list('todos').then(function (todos) {
+                if (filters) {
+                    return todos.filter(fileters).sort(_this.sort);
+                }
+
+                return todos.sort(_this.sort);
+            });
+        },
         validate: function validate(todo) {
             if (!todo.description) {
                 throw 'Please, inform the todo description';
             }
         },
         save: function save$$1(todo) {
-            var _this = this;
+            var _this2 = this;
 
             return new Promise(function (resolve, reject) {
                 try {
-                    _this.validate(todo);
+                    _this2.validate(todo);
                 } catch (e) {
                     return reject(e);
                 }
@@ -136,9 +196,10 @@ var app = (function () {
     };
 
     var save$1 = function save(state, actions) {
-        return service.save(state.model).then(function () {
+        return todoSrv.save(state.model).then(function () {
             actions.msg({ title: 'Info', txt: 'Todo saved' });
             actions.goTo({ page: 'home' });
+            actions.fetch({ model: 'todos' });
         }).catch(function (err) {
             return actions.msg({ title: 'Error', txt: err });
         });
@@ -175,11 +236,41 @@ var app = (function () {
         };
     });
 
+    var fetch = (function (_ref) {
+        var model = _ref.model,
+            list = _ref.list,
+            filters = _ref.filters;
+        return function (state, actions) {
+            if (model && list) {
+                var modelList = state.lists.find(function (list) {
+                    return list.model === model;
+                });
+                if (modelList) {
+                    modelList.list = list;
+                } else {
+                    state.lists.push({ model: model, list: list });
+                }
+
+                return Object.assign({}, state);
+            }
+
+            switch (model) {
+                case 'todos':
+                    todoSrv.list(filters).then(function (todos) {
+                        actions.fetch({ model: model, list: todos });
+                    });
+                default:
+                    return Object.assign({}, state);
+            }
+        };
+    });
+
     var actions = {
         goTo: goTo,
         model: model,
         save: save$2,
-        msg: msg
+        msg: msg,
+        fetch: fetch
     };
 
     var h$3 = window.hyperapp.h;
@@ -187,7 +278,7 @@ var app = (function () {
 
     var list$1 = (function (state, actions, items) {
         return h$3('div', { className: 'list sample-list' }, [h$3('ul', {}, items.map(function (item) {
-            return h$3('li', { onclick: item.onclick }, item.title);
+            return h$3('li', { onclick: item.onclick }, [h$3('div', { className: 'item-content' }, [h$3('div', { className: 'item-inner' }, [h$3('div', { className: 'item-title' }, item.title), item.after ? h$3('div', { className: 'item-after' }, item.after) : h$3('span')])])]);
         }))]);
     });
 
@@ -196,9 +287,10 @@ var app = (function () {
 
     var button = (function (state, actions, _ref) {
         var text = _ref.text,
-            onclick = _ref.onclick;
+            onclick = _ref.onclick,
+            color = _ref.color;
         return h$4('button', {
-            className: 'col button button-big button-outline',
+            className: 'col button button-big button-outline ' + (color ? 'color-' + color : ''),
             onclick: onclick
         }, text);
     });
@@ -207,14 +299,22 @@ var app = (function () {
 
 
     var home = (function (state, actions) {
-        return h$5('div', { className: 'page-home' }, [h$5('div', { className: 'block' }, [h$5('div', { className: 'row' }, [button(state, actions, { text: 'Add todo', onclick: function onclick() {
+        var todos = state.lists.find(function (l) {
+            return l.model === 'todos';
+        }) || {};
+
+        return h$5('div', { className: 'page-home',
+            oncreate: function oncreate() {
+                return actions.fetch({ model: 'todos' });
+            } }, [h$5('div', { className: 'block' }, [h$5('div', { className: 'row' }, [button(state, actions, { text: 'Add todo', onclick: function onclick() {
                 return actions.goTo({ page: 'add-todo' });
-            } })])]), list$1(state, actions, (state.lists.todo || []).map(function (todo) {
+            } })])]), list$1(state, actions, (todos.list || []).map(function (todo) {
             return {
                 title: todo.description,
                 onclick: function onclick() {
                     return console.log('TODO...');
-                }
+                },
+                after: [h$5('span', {}, [icon('delete')])]
             };
         }))]);
     });
@@ -260,9 +360,12 @@ var app = (function () {
 
 
     var addTodo = (function (state, actions) {
-        return h$9('div', { className: 'page-home' }, [title({ state: state, actions: actions, hasSearchBar: false, children: 'Create todo' }), form(state, actions, [input(state, actions, { type: 'text', name: 'description', placeholder: 'Todo' })]), h$9('div', { className: 'block' }, [button(state, actions, { text: 'Save', onclick: function onclick() {
+        return h$9('div', { className: 'page-home' }, [title({ state: state, actions: actions, hasSearchBar: false, children: 'Create todo' }), form(state, actions, [input(state, actions, { type: 'text', name: 'description', placeholder: 'Todo' })]), h$9('div', { className: 'block' }, [h$9('div', { className: 'row' }, [button(state, actions, { text: 'Cancel', color: 'gray',
+            onclick: function onclick() {
+                return actions.goTo({ page: 'home' });
+            } }), button(state, actions, { text: 'Save', onclick: function onclick() {
                 return actions.save('todo');
-            } })])]);
+            } })])])]);
     });
 
     var pages = [{ id: 'home', mount: home }, { id: 'add-todo', mount: addTodo }];
@@ -281,7 +384,7 @@ var app = (function () {
     var initialState = {
         prevPage: [],
         page: 'home',
-        lists: {},
+        lists: [],
         model: {}
     };
 
