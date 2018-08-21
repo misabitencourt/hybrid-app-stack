@@ -17,6 +17,7 @@ export default ({model, list, filters}) => (state, actions) => {
             todoSrv.list(filters).then(todos => {
                 actions.fetch({model, list: todos})
             })
+            return Object.assign({}, state)
         default:
             return Object.assign({}, state)
     }

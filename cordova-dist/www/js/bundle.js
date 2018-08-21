@@ -69,9 +69,16 @@ var app = (function () {
 
     var model = (function (_ref) {
         var prop = _ref.prop,
-            value = _ref.value;
+            value = _ref.value,
+            set = _ref.set;
         return function (state, actions) {
+            if (set) {
+                state.model = set;
+                return Object.assign({}, state);
+            }
+
             state.model[prop] = value;
+
             return Object.assign({}, state);
         };
     });
@@ -121,6 +128,38 @@ var app = (function () {
         });
     }
 
+    function update(listName, object) {
+
+        return new Promise(function (resolve) {
+            if (!listName) {
+                return resolve([]);
+            }
+
+            openDb(listName).then(function (store, trans) {
+                var cursorRequest = store.openCursor();
+
+                cursorRequest.onerror = function (error) {
+                    console.log(error);
+                };
+
+                cursorRequest.onsuccess = function (evt) {
+                    var cursor = evt.target.result;
+                    if (cursor) {
+                        var currentObj = cursor.value;
+                        if (currentObj && currentObj.id === object.id) {
+                            cursor.update(object);
+                        }
+                        cursor.continue();
+                    }
+                };
+
+                store.transaction.oncomplete = function () {
+                    return resolve(object);
+                };
+            });
+        });
+    }
+
     function list(listName, map) {
         return new Promise(function (resolve) {
             if (!listName) {
@@ -148,6 +187,19 @@ var app = (function () {
                 store.transaction.oncomplete = function () {
                     return resolve(map ? items.map(map) : items);
                 };
+            });
+        });
+    }
+
+    function destroy(listName, id) {
+        return new Promise(function (resolve) {
+            if (!listName) {
+                return resolve(true);
+            }
+
+            openDb(listName).then(function (store, trans) {
+                store.delete(id);
+                return resolve(true);
             });
         });
     }
@@ -190,8 +242,15 @@ var app = (function () {
                     return reject(e);
                 }
 
+                if (todo.id) {
+                    return update('todos', todo).then(resolve).catch(reject);
+                }
+
                 return save('todos', todo).then(resolve).catch(reject);
             });
+        },
+        destroy: function destroy$$1(id) {
+            return destroy('todos', id);
         }
     };
 
@@ -208,7 +267,7 @@ var app = (function () {
     var save$2 = (function (target) {
 
         switch (target) {
-            case 'todo':
+            case 'todos':
                 return save$1;
         }
 
@@ -259,6 +318,23 @@ var app = (function () {
                     todoSrv.list(filters).then(function (todos) {
                         actions.fetch({ model: model, list: todos });
                     });
+                    return Object.assign({}, state);
+                default:
+                    return Object.assign({}, state);
+            }
+        };
+    });
+
+    var deleteRecord = (function (_ref) {
+        var model = _ref.model,
+            id = _ref.id;
+        return function (state, actions) {
+            switch (model) {
+                case 'todos':
+                    todoSrv.destroy(id).then(function () {
+                        return actions.fetch({ model: 'todos' });
+                    });
+                    return Object.assign({}, state);
                 default:
                     return Object.assign({}, state);
             }
@@ -270,7 +346,8 @@ var app = (function () {
         model: model,
         save: save$2,
         msg: msg,
-        fetch: fetch
+        fetch: fetch,
+        deleteRecord: deleteRecord
     };
 
     var h$3 = window.hyperapp.h;
@@ -307,14 +384,18 @@ var app = (function () {
             oncreate: function oncreate() {
                 return actions.fetch({ model: 'todos' });
             } }, [h$5('div', { className: 'block' }, [h$5('div', { className: 'row' }, [button(state, actions, { text: 'Add todo', onclick: function onclick() {
-                return actions.goTo({ page: 'add-todo' });
+                actions.goTo({ page: 'add-todo' });
             } })])]), list$1(state, actions, (todos.list || []).map(function (todo) {
             return {
                 title: todo.description,
                 onclick: function onclick() {
-                    return console.log('TODO...');
+                    actions.model({ set: todo });
+                    actions.goTo({ page: 'add-todo' });
                 },
-                after: [h$5('span', {}, [icon('delete')])]
+                after: [h$5('span', { onclick: function onclick(e) {
+                        e.stopPropagation();
+                        actions.deleteRecord({ model: 'todos', id: todo.id });
+                    } }, [icon('delete')])]
             };
         }))]);
     });
@@ -341,7 +422,7 @@ var app = (function () {
 
         switch (type) {
             default:
-                return h$7('div', { className: 'item-input-wrap' }, [h$7('input', { type: 'text', placeholder: placeholder, onchange: function onchange(e) {
+                return h$7('div', { className: 'item-input-wrap' }, [h$7('input', { type: 'text', placeholder: placeholder, value: state.model[name], onchange: function onchange(e) {
                         return actions.model({ prop: name, value: e.target.value });
                     } })]);
         }
@@ -362,9 +443,11 @@ var app = (function () {
     var addTodo = (function (state, actions) {
         return h$9('div', { className: 'page-home' }, [title({ state: state, actions: actions, hasSearchBar: false, children: 'Create todo' }), form(state, actions, [input(state, actions, { type: 'text', name: 'description', placeholder: 'Todo' })]), h$9('div', { className: 'block' }, [h$9('div', { className: 'row' }, [button(state, actions, { text: 'Cancel', color: 'gray',
             onclick: function onclick() {
-                return actions.goTo({ page: 'home' });
+                actions.model({ set: {} });
+                actions.goTo({ page: 'home' });
             } }), button(state, actions, { text: 'Save', onclick: function onclick() {
-                return actions.save('todo');
+                actions.save('todos');
+                actions.model({ set: {} });
             } })])])]);
     });
 

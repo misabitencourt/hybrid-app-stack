@@ -3,7 +3,7 @@ import { save as saveTodo } from './todo'
 export default target => {
 
     switch (target) {
-        case 'todo':
+        case 'todos':
             return saveTodo;
     }
 

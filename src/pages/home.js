@@ -11,15 +11,25 @@ export default (state, actions) => {
 
         h('div', {className: 'block'}, [
             h('div', {className: 'row'}, [
-                button(state, actions, {text: 'Add todo', onclick: () => actions.goTo({page: 'add-todo'})})
+                button(state, actions, {text: 'Add todo', onclick: () => {                    
+                    actions.goTo({page: 'add-todo'})
+                }})
             ])
         ]),
 
         list(state, actions, (todos.list || []).map(todo => ({
             title: todo.description,
-            onclick: () => console.log('TODO...'),
+            onclick: () => {
+                actions.model({set: todo})
+                actions.goTo({page: 'add-todo'})
+            },
             after: [
-                h('span', {}, [icon('delete')])
+                h('span', {onclick: e => {
+                    e.stopPropagation()
+                    actions.deleteRecord({model: 'todos', id: todo.id})
+                }}, [
+                    icon('delete')
+                ])
             ]
         })))
     ])

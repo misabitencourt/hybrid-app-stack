@@ -1,4 +1,4 @@
-import {save, list} from '../repos/idb'
+import {save, list, destroy, update} from '../repos/idb'
 
 export default {
 
@@ -36,9 +36,16 @@ export default {
                 return reject(e)
             }
             
+            if (todo.id) {
+                return update('todos', todo).then(resolve).catch(reject)
+            }
+
             return save('todos', todo).then(resolve).catch(reject)
         })
-    }
+    },
 
+    destroy(id) {
+        return destroy('todos', id)
+    }
 
 }
