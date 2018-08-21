@@ -48,7 +48,14 @@ var app = (function () {
             rightChildren = _ref$rightChildren === undefined ? '' : _ref$rightChildren,
             state = _ref.state,
             actions = _ref.actions;
-        return h$1('div', { className: 'navbar' }, [h$1('div', { className: 'navbar-inner' }, [h$1('div', { className: 'left', 'data-panel': 'left' }, [h$1('a', { href: 'javascript:;', className: 'link icon-only panel-open' }, [icon('menu')])]), h$1('div', { className: 'title sliding' }, title), h$1('div', { className: 'right', 'data-panel': 'right' }, rightChildren)])]);
+        return h$1('div', { className: 'navbar' }, [h$1('div', { className: 'navbar-inner' }, [
+        // h('div', {className: 'left', 'data-panel': 'left'}, [
+        //     h('a', {href: 'javascript:;', className: 'link icon-only panel-open'}, [
+        //         icon('menu')
+        //     ])
+        // ]),
+
+        h$1('div', { className: 'title sliding' }, title), h$1('div', { className: 'right', 'data-panel': 'right' }, rightChildren)])]);
     });
 
     var h$2 = window.hyperapp.h;
